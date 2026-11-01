@@ -1,0 +1,8 @@
+# material de trabajo (fotos originales, fotogramas, pruebas): no se publica
+assets/_src/
+assets/_unused/
+assets/covers/
+assets/frames/
+assets/test/
+assets/vid/r-*.mp4
+assets/**/_*.txt
