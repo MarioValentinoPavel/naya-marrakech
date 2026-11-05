@@ -54,7 +54,7 @@
   }
   function dishHTML(it) {
     const tile = it.img
-      ? `<img src="assets/img/tiles/${it.img}.webp" alt="${it.n}, ${T('vu du dessus', 'seen from above', 'visto desde arriba')}" width="400" height="400" loading="lazy">`
+      ? `<img src="assets/img/tiles/${it.img}.webp" alt="${it.n}, ${T('vu du dessus', 'seen from above', 'visto desde arriba')}" width="400" height="400" loading="lazy" decoding="async">`
       : `<span>${it.n}</span><em>${T('Photo à venir', 'Photo coming soon', 'Foto próximamente')}</em>`;
     return `<article class="dish" data-id="${it.id}"><div class="dish-tile${it.img ? '' : ' no-photo'}">${tile}${qtyHTML(it.id, it.n)}</div>`
       + `<h3>${it.n}</h3><p class="dish-p">${dh(it.p)}</p>`
@@ -130,7 +130,7 @@
       const two = it.c[1] ? ` two" style="--c1:${it.c[0]};--c2:${it.c[1]}` : `" style="--c1:${it.c[0]}`;
       return `<div class="tile drink${dark(it.c[0]) ? ' dark' : ''}${two}" data-k="${key}"><span>${txt(it.n)}</span>${badge}</div>`;
     }
-    if (it.img) return `<div class="tile" data-k="${key}"><img src="assets/img/tiles/${it.img}.webp" alt="" width="400" height="400">${badge}</div>`;
+    if (it.img) return `<div class="tile" data-k="${key}"><img src="assets/img/tiles/${it.img}.webp" alt="" width="400" height="400" decoding="async">${badge}</div>`;
     return `<div class="tile no-photo" data-k="${key}"><span>${txt(it.n)}</span>${badge}</div>`;
   }
   function renderTable(added) {
@@ -168,6 +168,7 @@
       });
     }
     renderBill();
+    marks = null; // la mesa cambia de altura: se vuelven a medir las secciones
   }
   function renderBill() {
     const rows = [...table].map(([id, q]) => ({ it: ITEMS.get(id), q }));
@@ -218,7 +219,7 @@
   // ---------- desplazamiento suave y anclas ----------
   const navH = () => $('.top').offsetHeight;
   if (!reduce && window.Lenis) {
-    window.lenis = new Lenis({ lerp: .11, wheelMultiplier: .95 });
+    window.lenis = new Lenis({ lerp: .1, wheelMultiplier: 1 });
     if (window.gsap && window.ScrollTrigger) {
       gsap.registerPlugin(ScrollTrigger);
       lenis.on('scroll', ScrollTrigger.update);
@@ -237,15 +238,24 @@
 
   // ---------- cabecera, barra móvil y píldora ----------
   const top = $('.top'), mbar = $('.mbar'), pill = $('.js-pill'), tableSec = $('#table'), hero = $('.hero');
+  // las medidas se leen una vez (y al cambiar el tamaño o la mesa); en cada scroll solo se compara con scrollY
+  const findSec = $('#trouver');
+  let marks = null;
+  const measure = () => {
+    const sy = scrollY, tr = tableSec.getBoundingClientRect();
+    marks = { hero: hero.offsetHeight * .6, tTop: tr.top + sy, tBot: tr.bottom + sy, end: findSec.getBoundingClientRect().top + sy, vh: innerHeight };
+  };
   function onScroll() {
-    const y = scrollY;
+    if (!marks) measure();
+    const y = scrollY, m = marks, pastHero = y > m.hero;
+    const inTable = m.tTop - y < m.vh * .85 && m.tBot - y > m.vh * .2;
     top.classList.toggle('scrolled', y > 24);
-    const pastHero = y > hero.offsetHeight * .6;
     mbar?.classList.toggle('off', !pastHero);
-    const r = tableSec.getBoundingClientRect(), end = $('#trouver').getBoundingClientRect().top < innerHeight * .9;
-    pill.classList.toggle('off', !pastHero || (r.top < innerHeight * .85 && r.bottom > innerHeight * .2) || end);
+    pill.classList.toggle('off', !pastHero || inTable || m.end - y < m.vh * .9);
   }
   addEventListener('scroll', onScroll, { passive: true });
+  addEventListener('resize', () => { marks = null; });
+  window.ScrollTrigger?.addEventListener('refresh', () => { marks = null; });
 
   // ---------- vídeo de cocina: solo suena la imagen, y solo en pantalla ----------
   const vid = $('.js-vid'), vbtn = $('.js-vid-btn');
@@ -254,7 +264,7 @@
     const sync = () => { vbtn.setAttribute('aria-pressed', String(vid.paused)); vbtn.setAttribute('aria-label', vid.paused ? T('Lire la vidéo', 'Play the video', 'Reproducir el vídeo') : T('Mettre la vidéo en pause', 'Pause the video', 'Pausar el vídeo')); };
     new IntersectionObserver(([en]) => {
       if (en.isIntersecting && !userPaused) { vid.preload = 'auto'; vid.play().catch(() => {}); } else vid.pause();
-    }, { threshold: .25 }).observe(vid);
+    }, { threshold: .01, rootMargin: '300px 0px' }).observe(vid);
     vbtn.addEventListener('click', () => { if (vid.paused) { userPaused = false; vid.play().catch(() => {}); } else { userPaused = true; vid.pause(); } });
     vid.addEventListener('play', sync); vid.addEventListener('pause', sync); sync();
   }
@@ -290,6 +300,8 @@
   function animate() {
     const html = document.documentElement;
     if (reduce || !window.gsap || !window.ScrollTrigger) { html.classList.remove('pre'); return; }
+    // en móvil, la barra de direcciones que aparece y desaparece no debe recalcular todas las animaciones
+    ScrollTrigger.config({ ignoreMobileResize: true });
     const mobile = matchMedia('(max-width: 760px), (max-width: 1100px) and (orientation: portrait)').matches;
     // arranque: se sirve el plato y el nombre sale de detrás, a cada lado
     const tl = gsap.timeline({ defaults: { ease: 'power4.out' }, onStart: () => html.classList.remove('pre') });
@@ -322,8 +334,18 @@
       drawLines(); requestAnimationFrame(() => lines?.classList.add('drawn'));
     } });
     // fachada y cocina: se abren desde el eje
-    const doors = { '.tri-l .tri-m': 'inset(0 0 0 100%)', '.tri-c .tri-m': 'inset(0 50% 0 50%)', '.tri-r .tri-m': 'inset(0 100% 0 0)' };
-    Object.entries(doors).forEach(([s, from], i) => gsap.fromTo(s, { clipPath: from }, { clipPath: 'inset(0 0% 0 0%)', duration: 1.4, ease: 'expo.inOut', delay: i === 1 ? .12 : 0, scrollTrigger: { trigger: '.tri', start: 'top 78%', toggleActions: 'play none none none' } }));
+    // puertas del color del fondo que se recogen hacia los bordes (transform, sin repintar como el clip-path)
+    const doors = [['.tri-l .tri-m', ['0% 50%']], ['.tri-c .tri-m', ['0% 50%', '100% 50%']], ['.tri-r .tri-m', ['100% 50%']]];
+    doors.forEach(([s, origins], i) => {
+      const box = $(s); if (!box) return;
+      const leaves = origins.map((o, k) => {
+        const d = document.createElement('span'); d.className = 'tri-door'; d.setAttribute('aria-hidden', 'true');
+        if (origins.length === 2) d.style.cssText = k ? 'left:50%' : 'right:50%';
+        d.style.transformOrigin = o; box.appendChild(d); return d;
+      });
+      gsap.to(leaves, { scaleX: 0, duration: 1.2, ease: 'expo.inOut', delay: i === 1 ? .1 : 0, onComplete: () => leaves.forEach((d) => d.remove()),
+        scrollTrigger: { trigger: '.tri', start: 'top 80%', toggleActions: 'play none none none' } });
+    });
     gsap.fromTo('.tri-m img, .tri-m video', { scale: 1.12 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: '.tri', start: 'top bottom', end: 'bottom top', scrub: true } });
     // la nota sube hasta 4,7
     const sn = $('.score-n');
@@ -350,5 +372,6 @@
   setTimeout(boot, 2500);
   setInterval(status, 60 * 1000);
   let rw = innerWidth;
-  addEventListener('resize', () => { drawLines(); if (Math.abs(innerWidth - rw) > 40) { rw = innerWidth; renderTable(); } });
+  // solo los cambios de anchura rehacen las líneas y la mesa (la barra del móvil cambia solo la altura)
+  addEventListener('resize', () => { if (innerWidth === rw) return; rw = innerWidth; drawLines(); renderTable(); });
 })();

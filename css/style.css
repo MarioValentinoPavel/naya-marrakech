@@ -417,3 +417,7 @@ section { padding: var(--sec) 0; }
   .mono-plate { width: var(--pw); aspect-ratio: 678 / 897; margin: -.04em 0; }
   .mono-plate img { width: 100%; rotate: none; }
 }
+/* rendimiento: lo que se mueve con el scroll va en su propia capa y no se repinta en cada fotograma */
+.mono-plate, .mono-w, .duo-a, .tri-m img, .tri-m video { will-change: transform; }
+.tri-door { position: absolute; inset: 0; z-index: 2; background: var(--ground); will-change: transform; pointer-events: none; }
+.tri-c .tri-door { inset: 0 auto 0 auto; width: 50%; }
