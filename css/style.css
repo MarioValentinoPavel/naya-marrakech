@@ -149,8 +149,10 @@ section { padding: var(--sec) 0; }
 .beldi-drinks p { color: var(--ink-2); }
 
 /* la carta */
-.tabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; max-width: 900px; margin: 0 auto clamp(40px, 5vw, 64px); padding: 0 var(--m); }
-.tab { min-height: 48px; padding: 0 22px; border: 0; border-radius: 99px; background: var(--ground-2); font: 500 15px/1 var(--f-b); transition: background-color .25s, color .25s, scale .16s var(--ease); }
+/* barra de pestañas fija bajo la cabecera mientras se recorre la carta; en móvil se desliza */
+.tabs { position: sticky; top: calc(var(--nav-h) + 10px); z-index: 30; display: flex; gap: 4px; width: max-content; max-width: calc(100% - 2 * var(--m)); margin: 0 auto clamp(40px, 5vw, 64px); padding: 5px; border-radius: 99px; background: var(--ground); box-shadow: 0 12px 30px -18px rgba(23, 19, 15, .5); overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+.tabs::-webkit-scrollbar { display: none; }
+.tab { flex: none; white-space: nowrap; min-height: 44px; padding: 0 20px; border: 0; border-radius: 99px; background: transparent; font: 500 15px/1 var(--f-b); transition: background-color .25s, color .25s, scale .16s var(--ease); }
 .tab:active { scale: .97; }
 .tab[aria-selected="true"] { background: var(--ink); color: var(--ground); }
 @media (hover: hover) and (pointer: fine) { .tab[aria-selected="false"]:hover { background: #ddd5c9; } }
@@ -401,11 +403,11 @@ section { padding: var(--sec) 0; }
 .beldi-lines.drawn circle { opacity: 1; }
 /* ritmo de fondos: mármol y crema se alternan; en crema, las superficies pasan a mármol */
 .duo { padding-top: var(--sec); }
-.field .tab[aria-selected="false"], .field .row, .field .social a, .field .q { background: var(--ground); }
+.field .row, .field .social a, .field .q { background: var(--ground); }
 .field .qty { background: var(--ground); }
 .beldi-drinks > div { background: var(--ground-2); }
 .beldi-lines .ring { fill: var(--ground); }
-@media (hover: hover) and (pointer: fine) { .field .tab[aria-selected="false"]:hover, .field .social a:hover { background: #fbf9f6; } }
+@media (hover: hover) and (pointer: fine) { .field .social a:hover { background: #fbf9f6; } }
 .field .q-c { background: var(--ink); }
 .field .dish-tile.no-photo, .field .tile.no-photo { background: var(--ground); }
 .menu .langs { justify-self: center; }
@@ -421,3 +423,28 @@ section { padding: var(--sec) 0; }
 .mono-plate, .mono-w, .duo-a, .tri-m img, .tri-m video { will-change: transform; }
 .tri-door { position: absolute; inset: 0; z-index: 2; background: var(--ground); will-change: transform; pointer-events: none; }
 .tri-c .tri-door { inset: 0 auto 0 auto; width: 50%; }
+/* bebidas: un grupo cada vez, elegido con un control segmentado bajo las pestañas */
+.sw-filter { position: relative; display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; max-width: 980px; margin: 0 auto clamp(36px, 4vw, 56px); }
+.sw-chip { display: inline-flex; align-items: center; gap: 8px; flex: none; min-height: 42px; padding: 0 16px; border: 0; border-radius: 99px; background: transparent; color: var(--ink-2); font: 500 14.5px/1 var(--f-b); white-space: nowrap; transition: background-color .25s, color .25s, scale .16s var(--ease); }
+.sw-chip span { font-size: 12px; font-variant-numeric: tabular-nums; opacity: .7; }
+.sw-chip[aria-pressed="true"] { background: var(--ground); color: var(--ink); }
+.sw-chip:active { scale: .97; }
+@media (hover: hover) and (pointer: fine) { .sw-chip[aria-pressed="false"]:hover { color: var(--ink); background: rgba(242, 239, 234, .55); } }
+.sw-group > h3 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* móvil: el botón principal de la barra pasa a ser la mesa cuando hay algo */
+.mb-main { gap: 3px; line-height: 1.1; text-align: center; }
+.mb-main.is-table span { font-size: 12.5px; }
+.mb-main.is-table b { font: 600 15px/1 var(--f-b); font-variant-numeric: tabular-nums; }
+@media (max-width: 760px) {
+  .mbar { grid-template-columns: 1.35fr 1fr 1fr; }
+  .mbar a.mb-main { display: grid; align-content: center; }
+  .pill { display: none !important; }
+  .tabs { max-width: calc(100% - 2 * var(--m)); }
+  .tab { min-height: 42px; padding: 0 16px; font-size: 14.5px; }
+  .sw-filter { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; margin-left: calc(-1 * var(--m)); margin-right: calc(-1 * var(--m)); padding: 0 var(--m); }
+  .sw-filter::-webkit-scrollbar { display: none; }
+}
+/* el aviso «ajouté» sale abajo, encima de la barra, para no tapar las pestañas fijas */
+.toast { top: auto; bottom: calc(92px + env(safe-area-inset-bottom)); translate: -50% 16px; }
+.toast.show { translate: -50% 0; }
+@media (max-width: 760px) { .toast { bottom: calc(80px + env(safe-area-inset-bottom)); max-width: calc(100vw - 32px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }

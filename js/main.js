@@ -77,19 +77,45 @@
       if (s.extra) h += `<div class="more"><h3>${T('En plus', 'Extra', 'Extra')}</h3><ul class="rows">${rowHTML(s.extra)}</ul></div>`;
       return h + '</div>';
     }).join('') + `<div class="panel" role="tabpanel" id="p-boissons" aria-labelledby="t-boissons" tabindex="0"${current === 'boissons' ? '' : ' hidden'}>`
-      + DRINKS.map((g) => `<div class="sw-group"><h3>${txt(g.title)}</h3><div class="sws">${g.items.map(swHTML).join('')}</div></div>`).join('') + '</div>';
+      + `<div class="sw-filter" role="group" aria-label="${T('Type de boisson', 'Type of drink', 'Tipo de bebida')}">`
+      + DRINKS.map((g) => `<button type="button" class="sw-chip" data-group="${g.id}" aria-pressed="${g.id === group}">${txt(g.title)}<span>${g.items.length}</span></button>`).join('') + '</div>'
+      + DRINKS.map((g) => `<div class="sw-group" id="g-${g.id}"${g.id === group ? '' : ' hidden'}><h3>${txt(g.title)}</h3><div class="sws">${g.items.map(swHTML).join('')}</div></div>`).join('') + '</div>';
+  }
+  // bebidas: un grupo cada vez, para que la pestaña no sea una lista de 43
+  let group = DRINKS[0].id;
+  function selectGroup(id) {
+    group = id;
+    $$('.sw-chip').forEach((b) => {
+      const on = b.dataset.group === id; b.setAttribute('aria-pressed', String(on));
+      if (on) { const row = b.parentElement; row.scrollTo({ left: b.offsetLeft - (row.clientWidth - b.offsetWidth) / 2, behavior: reduce ? 'auto' : 'smooth' }); }
+    });
+    $$('.sw-group').forEach((g) => { g.hidden = g.id !== 'g-' + id; });
+    const g = $('#g-' + id);
+    if (!reduce && window.gsap && g) gsap.fromTo($$('.sw', g), { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: .45, ease: 'power3.out', stagger: .025, clearProps: 'transform,opacity' });
+    toCarteTop(); window.ScrollTrigger?.refresh();
+  }
+  // si la barra de pestañas va fija y ya se ha bajado por la carta, se vuelve al principio de la lista
+  function toCarteTop() {
+    const tabs = $('.tabs'), panels = $('.js-panels');
+    const y = panels.getBoundingClientRect().top + scrollY - navH() - tabs.offsetHeight - 24;
+    if (scrollY > y + 4) { if (window.lenis) lenis.scrollTo(y, { duration: .6 }); else scrollTo({ top: y }); }
   }
   function selectTab(id, focus) {
     current = id;
-    $$('.tab').forEach((b) => { const on = b.id === 't-' + id; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; if (on && focus) b.focus(); });
+    $$('.tab').forEach((b) => {
+      const on = b.id === 't-' + id; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1;
+      if (on) { if (focus) b.focus(); const row = b.parentElement; row.scrollTo({ left: b.offsetLeft - (row.clientWidth - b.offsetWidth) / 2, behavior: reduce ? 'auto' : 'smooth' }); }
+    });
     $$('.panel').forEach((p) => { p.hidden = p.id !== 'p-' + id; });
     const p = $('#p-' + id);
-    if (!reduce && window.gsap && p) gsap.fromTo($$('.dish, .sw, .more', p).slice(0, 14), { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: .6, ease: 'power3.out', stagger: .035, clearProps: 'transform,opacity' });
+    if (!reduce && window.gsap && p) gsap.fromTo($$('.dish, .more, .sw-group:not([hidden]) .sw', p).slice(0, 14), { y: 22, opacity: 0 }, { y: 0, opacity: 1, duration: .6, ease: 'power3.out', stagger: .035, clearProps: 'transform,opacity' });
     window.ScrollTrigger?.refresh();
   }
   document.addEventListener('click', (e) => {
+    const chip = e.target.closest('.sw-chip');
+    if (chip) { selectGroup(chip.dataset.group); return; }
     const tab = e.target.closest('.tab');
-    if (tab) { selectTab(tab.id.slice(2)); return; }
+    if (tab) { selectTab(tab.id.slice(2)); toCarteTop(); return; }
     const link = e.target.closest('[data-tab]');
     if (link) { selectTab(link.dataset.tab); }
   });
@@ -182,7 +208,19 @@
     const pill = $('.js-pill');
     pill.hidden = count === 0;
     $('.js-pill-n').textContent = count; $('.js-pill-t').textContent = dh(total);
+    bar.count = count; bar.total = total; syncBar();
     return { rows, total };
+  }
+  // móvil: una sola barra. El primer botón es «La carte» o, si hay algo en la mesa, «Votre table» con el total
+  const bar = { count: 0, total: 0, inTable: false };
+  function syncBar() {
+    const main = $('.mb-main'); if (!main) return;
+    const showTable = bar.count > 0 && !bar.inTable;
+    main.setAttribute('href', showTable ? '#table' : '#carte');
+    main.classList.toggle('is-table', showTable);
+    main.innerHTML = showTable
+      ? `<span>${T('Votre table', 'Your table', 'Tu mesa')} · ${bar.count}</span><b>${dh(bar.total)}</b>`
+      : `<span>${T('La carte', 'Menu', 'La carta')}</span>`;
   }
   $('.js-copy')?.addEventListener('click', async () => {
     const { rows, total } = renderBill();
@@ -251,6 +289,7 @@
     const inTable = m.tTop - y < m.vh * .85 && m.tBot - y > m.vh * .2;
     top.classList.toggle('scrolled', y > 24);
     mbar?.classList.toggle('off', !pastHero);
+    if (inTable !== bar.inTable) { bar.inTable = inTable; syncBar(); }
     pill.classList.toggle('off', !pastHero || inTable || m.end - y < m.vh * .9);
   }
   addEventListener('scroll', onScroll, { passive: true });
