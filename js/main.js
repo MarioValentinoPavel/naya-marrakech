@@ -293,10 +293,10 @@
     const mobile = matchMedia('(max-width: 760px), (max-width: 1100px) and (orientation: portrait)').matches;
     // arranque: se sirve el plato y el nombre sale de detrás, a cada lado
     const tl = gsap.timeline({ defaults: { ease: 'power4.out' }, onStart: () => html.classList.remove('pre') });
-    tl.fromTo('.mono-plate', { y: mobile ? 40 : 70, rotation: -14, scale: .9, opacity: 0 }, { y: 0, rotation: 0, scale: 1, opacity: 1, duration: 1.15 })
-      .fromTo('.mono-l .mono-i', mobile ? { yPercent: 105 } : { xPercent: 102 }, { xPercent: 0, yPercent: 0, duration: 1.1, ease: 'expo.out' }, .55)
-      .fromTo('.mono-r .mono-i', mobile ? { yPercent: -105 } : { xPercent: -102 }, { xPercent: 0, yPercent: 0, duration: 1.1, ease: 'expo.out' }, .55)
-      .fromTo('[data-h]', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: .8, stagger: .08, clearProps: 'transform,opacity' }, 1.05);
+    tl.fromTo('.mono-plate', { y: mobile ? 28 : 44, rotation: -10, scale: .94, opacity: 0 }, { y: 0, rotation: 0, scale: 1, opacity: 1, duration: .75 })
+      .fromTo('.mono-l .mono-i', mobile ? { yPercent: 105 } : { xPercent: 102 }, { xPercent: 0, yPercent: 0, duration: .8, ease: 'expo.out' }, .12)
+      .fromTo('.mono-r .mono-i', mobile ? { yPercent: -105 } : { xPercent: -102 }, { xPercent: 0, yPercent: 0, duration: .8, ease: 'expo.out' }, .12)
+      .fromTo('[data-h]', { y: 14, opacity: 0 }, { y: 0, opacity: 1, duration: .55, stagger: .05, clearProps: 'transform,opacity' }, .28);
     // al bajar, la mesa gira un poco y el nombre se abre
     gsap.timeline({ scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } })
       .to('.mono-plate', { rotation: mobile ? 0 : 24, y: mobile ? 0 : '6vh', ease: 'none' }, 0)
@@ -305,12 +305,12 @@
     // títulos palabra a palabra
     $$('[data-split]').forEach((h) => {
       splitWords(h);
-      gsap.fromTo($$('.w > span', h), { yPercent: 105 }, { yPercent: 0, duration: 1, ease: 'expo.out', stagger: .055, scrollTrigger: { trigger: h, start: 'top 88%', toggleActions: 'play none none none' } });
+      gsap.fromTo($$('.w > span', h), { yPercent: 105 }, { yPercent: 0, duration: .8, ease: 'expo.out', stagger: .04, scrollTrigger: { trigger: h, start: 'top 92%', toggleActions: 'play none none none' } });
     });
     // piezas de cada sección: título, texto y luego imagen, escalonados al entrar
     const ups = $$('[data-up]');
     gsap.set(ups, { opacity: 0 });
-    ScrollTrigger.batch(ups, { start: 'top 90%', onEnter: (b) => gsap.fromTo(b, { y: 26, opacity: 0 }, { y: 0, opacity: 1, duration: .9, ease: 'power3.out', stagger: .08, clearProps: 'transform,opacity' }) });
+    ScrollTrigger.batch(ups, { start: 'top 94%', onEnter: (b) => gsap.fromTo(b, { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: .6, ease: 'power3.out', stagger: .05, clearProps: 'transform,opacity' }) });
     // los dos platos giran en espejo con el scroll
     gsap.fromTo('.duo-l .duo-a', { rotation: -16 }, { rotation: 12, ease: 'none', scrollTrigger: { trigger: '.duo', start: 'top bottom', end: 'bottom top', scrub: true } });
     gsap.fromTo('.duo-r .duo-a', { rotation: 16 }, { rotation: -12, ease: 'none', scrollTrigger: { trigger: '.duo', start: 'top bottom', end: 'bottom top', scrub: true } });

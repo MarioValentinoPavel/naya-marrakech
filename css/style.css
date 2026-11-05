@@ -254,7 +254,7 @@ section { padding: var(--sec) 0; }
 
 /* opiniones */
 .score { display: grid; justify-items: center; gap: 12px; margin: 0 auto clamp(48px, 6vw, 80px); text-align: center; }
-.score-n { font: 400 clamp(110px, 15vw, 210px)/.82 var(--f-d); letter-spacing: -.02em; }
+.score-n { font: 400 clamp(110px, 15vw, 210px)/.82 var(--f-d); letter-spacing: -.02em; padding-bottom: .2em; } /* la coma baja de la línea: espacio para que no pise las estrellas */
 .score-t { display: grid; justify-items: center; gap: 10px; color: var(--ink-2); }
 .stars { display: flex; gap: 4px; color: var(--acc); }
 .stars svg { width: 22px; height: 22px; }
